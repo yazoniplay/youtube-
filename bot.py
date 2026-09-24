@@ -33,7 +33,7 @@ class ViralButtons(discord.ui.View):
     async def another(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
         result = generate_script(self.video, regenerate=True)
-        await interaction.followup.send(result[:4000])
+        await interaction.followup.send(embed=discord.Embed(title="🎬 Another Version", description=result[:4000]))
 
 
 @bot.event
@@ -49,12 +49,7 @@ async def viral(interaction: discord.Interaction):
     video = find_viral_video()
     result = generate_script(video)
 
-    embed = discord.Embed(
-        title="🔥 Viral Video Found",
-        description=result[:4000],
-        color=discord.Color.red()
-    )
-
+    embed = discord.Embed(title="🔥 Viral Video Found", description=result[:4000], color=discord.Color.red())
     embed.add_field(name="Original Video", value=f"[{video['title']}]({video['url']})", inline=False)
 
     await interaction.followup.send(embed=embed, view=ViralButtons(video, result))
@@ -71,11 +66,7 @@ async def saved(interaction: discord.Interaction):
     embed = discord.Embed(title="📚 Saved Viral Ideas", color=discord.Color.green())
 
     for video in videos[:10]:
-        embed.add_field(
-            name=f"#{video['id']} 🔥 {video['title']}",
-            value=video['url'],
-            inline=False
-        )
+        embed.add_field(name=f"#{video['id']} 🔥 {video['title']}", value=video['url'], inline=False)
 
     await interaction.response.send_message(embed=embed)
 
@@ -88,7 +79,8 @@ async def view(interaction: discord.Interaction, id: int):
         await interaction.response.send_message("❌ Not found.")
         return
 
-    embed = discord.Embed(title=f"📖 {video['title']}", description=video['script'][:4000], color=discord.Color.blue())
+    embed = discord.Embed(title=f"📖 {video['title']}", description=video.get('result', 'No script saved.')[:4000], color=discord.Color.blue())
+    embed.add_field(name="Original Video", value=video['url'], inline=False)
     await interaction.response.send_message(embed=embed)
 
 
