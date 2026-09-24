@@ -8,17 +8,47 @@ model = genai.GenerativeModel("gemini-2.5-flash")
 
 def generate_script(video):
     prompt = f"""
-Analyze this viral YouTube video and create an original remake idea.
+You are a YouTube Shorts growth strategist.
+
+Analyze this currently viral video:
 
 Title: {video['title']}
 URL: {video['url']}
+Viral Score: {video.get('viral_score', 'unknown')}
+
+Create an ORIGINAL video concept. Do not copy the original.
 
 Return:
-- Why it went viral
-- New original concept
-- Shorts title
-- 0-60 second script
-- Editing ideas
+
+🔥 VIRAL ANALYSIS
+- Why viewers clicked
+- Hook strength
+- Retention strategy
+- What made it shareable
+
+💡 ORIGINAL REMAKE IDEA
+- New title
+- New concept
+- Target audience
+
+🎬 FULL SHORTS SCRIPT
+0-3 seconds:
+Hook
+
+3-15 seconds:
+Setup
+
+15-45 seconds:
+Main content
+
+45-60 seconds:
+Payoff
+
+🎥 EDITING PLAN
+- Cuts
+- Captions
+- Effects
+
 """
 
     response = model.generate_content(prompt)
