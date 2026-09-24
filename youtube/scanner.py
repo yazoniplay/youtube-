@@ -19,50 +19,62 @@ def find_viral_video():
     try:
         youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
 
-        search = youtube.search().list(
-            part="snippet",
-            maxResults=10,
-            order="date",
-            type="video"
-        ).execute()
+        queries = [
+            "viral shorts",
+            "trending shorts",
+            "viral challenge",
+            "AI trend",
+            "minecraft shorts",
+            "funny shorts"
+        ]
 
         candidates = []
 
-        for item in search.get("items", []):
-            video_id = item.get("id", {}).get("videoId")
-
-            if not video_id:
-                continue
-
-            details_response = youtube.videos().list(
-                part="statistics,snippet",
-                id=video_id
+        for query in queries:
+            search = youtube.search().list(
+                part="snippet",
+                maxResults=10,
+                order="viewCount",
+                publishedAfter=(datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).isoformat().replace("+00:00", "Z")),
+                q=query,
+                type="video"
             ).execute()
 
-            if not details_response.get("items"):
-                continue
+            for item in search.get("items", []):
+                video_id = item.get("id", {}).get("videoId")
+                if not video_id:
+                    continue
 
-            details = details_response["items"][0]
-            stats = details.get("statistics", {})
-            published = details.get("snippet", {}).get("publishedAt")
+                details_response = youtube.videos().list(
+                    part="statistics,snippet,contentDetails",
+                    id=video_id
+                ).execute()
 
-            if not published:
-                continue
+                if not details_response.get("items"):
+                    continue
 
-            upload_time = datetime.fromisoformat(published.replace("Z", "+00:00"))
-            hours_old = max((datetime.now(timezone.utc) - upload_time).total_seconds() / 3600, 1)
+                details = details_response["items"][0]
+                stats = details.get("statistics", {})
+                snippet = details.get("snippet", {})
 
-            video = {
-                "title": details["snippet"].get("title", "Unknown"),
-                "url": f"https://youtube.com/watch?v={video_id}",
-                "views": int(stats.get("viewCount", 0)),
-                "likes": int(stats.get("likeCount", 0)),
-                "comments": int(stats.get("commentCount", 0)),
-                "hours_old": hours_old
-            }
+                published = snippet.get("publishedAt")
+                if not published:
+                    continue
 
-            video["viral_score"] = calculate_score(video)
-            candidates.append(video)
+                upload_time = datetime.fromisoformat(published.replace("Z", "+00:00"))
+                hours_old = max((datetime.now(timezone.utc) - upload_time).total_seconds() / 3600, 1)
+
+                video = {
+                    "title": snippet.get("title", "Unknown"),
+                    "url": f"https://youtube.com/watch?v={video_id}",
+                    "views": int(stats.get("viewCount", 0)),
+                    "likes": int(stats.get("likeCount", 0)),
+                    "comments": int(stats.get("commentCount", 0)),
+                    "hours_old": hours_old
+                }
+
+                video["viral_score"] = calculate_score(video)
+                candidates.append(video)
 
         if not candidates:
             return None
