@@ -16,44 +16,59 @@ def calculate_score(video):
 
 
 def find_viral_video():
-    youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
+    try:
+        youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
 
-    search = youtube.search().list(
-        part="snippet",
-        maxResults=10,
-        order="date",
-        type="video"
-    ).execute()
+        search = youtube.search().list(
+            part="snippet",
+            maxResults=10,
+            order="date",
+            type="video"
+        ).execute()
 
-    candidates = []
+        candidates = []
 
-    for item in search.get("items", []):
-        video_id = item["id"]["videoId"]
+        for item in search.get("items", []):
+            video_id = item.get("id", {}).get("videoId")
 
-        details = youtube.videos().list(
-            part="statistics,snippet",
-            id=video_id
-        ).execute()["items"][0]
+            if not video_id:
+                continue
 
-        stats = details.get("statistics", {})
-        published = details["snippet"].get("publishedAt")
+            details_response = youtube.videos().list(
+                part="statistics,snippet",
+                id=video_id
+            ).execute()
 
-        upload_time = datetime.fromisoformat(published.replace("Z", "+00:00"))
-        hours_old = (datetime.now(timezone.utc) - upload_time).total_seconds() / 3600
+            if not details_response.get("items"):
+                continue
 
-        video = {
-            "title": details["snippet"]["title"],
-            "url": f"https://youtube.com/watch?v={video_id}",
-            "views": int(stats.get("viewCount", 0)),
-            "likes": int(stats.get("likeCount", 0)),
-            "comments": int(stats.get("commentCount", 0)),
-            "hours_old": hours_old
-        }
+            details = details_response["items"][0]
+            stats = details.get("statistics", {})
+            published = details.get("snippet", {}).get("publishedAt")
 
-        video["viral_score"] = calculate_score(video)
-        candidates.append(video)
+            if not published:
+                continue
 
-    if not candidates:
+            upload_time = datetime.fromisoformat(published.replace("Z", "+00:00"))
+            hours_old = max((datetime.now(timezone.utc) - upload_time).total_seconds() / 3600, 1)
+
+            video = {
+                "title": details["snippet"].get("title", "Unknown"),
+                "url": f"https://youtube.com/watch?v={video_id}",
+                "views": int(stats.get("viewCount", 0)),
+                "likes": int(stats.get("likeCount", 0)),
+                "comments": int(stats.get("commentCount", 0)),
+                "hours_old": hours_old
+            }
+
+            video["viral_score"] = calculate_score(video)
+            candidates.append(video)
+
+        if not candidates:
+            return None
+
+        return max(candidates, key=lambda x: x["viral_score"])
+
+    except Exception as e:
+        print(f"YouTube scanner error: {e}")
         return None
-
-    return max(candidates, key=lambda x: x["viral_score"])
