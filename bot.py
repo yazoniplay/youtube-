@@ -5,6 +5,30 @@ from ai.gemini import generate_script
 from youtube.scanner import find_viral_video
 from database.saves import save_video, get_saved_videos, get_video, delete_video
 
+import threading
+import os
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+
+class HealthCheck(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is running!")
+
+    def log_message(self, format, *args):
+        return
+
+
+def run_health_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), HealthCheck)
+    server.serve_forever()
+
+
+threading.Thread(target=run_health_server, daemon=True).start()
+
+
 intents = discord.Intents.default()
 intents.message_content = True
 
@@ -63,7 +87,6 @@ async def viral(interaction: discord.Interaction):
         if not video:
             await interaction.followup.send("❌ No viral video found.")
             return
-
         result = generate_script(video)
         embed = make_embed("🔥 Viral Video Found", result, discord.Color.red())
         embed.add_field(name="Original Video", value=f"[{video['title']}]({video['url']})", inline=False)
@@ -78,7 +101,6 @@ async def saved(interaction: discord.Interaction):
     if not videos:
         await interaction.response.send_message("No saved videos yet.")
         return
-
     embed = discord.Embed(title="📚 Saved Viral Ideas", color=discord.Color.green())
     for video in videos[:10]:
         embed.add_field(name=f"#{video['id']} 🔥 {video['title']}", value=video['url'], inline=False)
