@@ -6,48 +6,98 @@ genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel("gemini-2.5-flash")
 
 
-def generate_script(video):
-    prompt = f"""
-You are a YouTube Shorts growth strategist.
+def generate_script(video, regenerate=False):
+    mode = "Create a fresh alternative version." if regenerate else "Create the first version."
 
-Analyze this currently viral video:
+    prompt = f"""
+You are an expert YouTube Shorts producer and viral content strategist.
+
+Analyze this viral video:
 
 Title: {video['title']}
 URL: {video['url']}
 Viral Score: {video.get('viral_score', 'unknown')}
 
-Create an ORIGINAL video concept. Do not copy the original.
+{mode}
 
-Return:
+Do NOT copy the original video. Create an original idea using the same successful content principles.
+
+Return exactly this structure:
 
 🔥 VIRAL ANALYSIS
-- Why viewers clicked
-- Hook strength
-- Retention strategy
-- What made it shareable
 
-💡 ORIGINAL REMAKE IDEA
-- New title
-- New concept
-- Target audience
+Why people clicked:
 
-🎬 FULL SHORTS SCRIPT
-0-3 seconds:
-Hook
+Hook analysis:
 
-3-15 seconds:
-Setup
+Retention strategy:
 
-15-45 seconds:
-Main content
+Why viewers shared it:
 
-45-60 seconds:
-Payoff
 
-🎥 EDITING PLAN
-- Cuts
-- Captions
-- Effects
+💡 ORIGINAL VIDEO IDEA
+
+Title:
+
+Concept:
+
+Target audience:
+
+Why this could work:
+
+
+🎬 FULL SHORTS PRODUCTION SCRIPT
+
+SCENE 1
+TIME: 0-3 seconds
+
+VISUAL:
+(Describe exactly what appears on screen)
+
+VOICE:
+(The exact words spoken)
+
+EDIT:
+(Camera movement, captions, sound effects, transitions)
+
+
+SCENE 2
+TIME: 3-15 seconds
+
+VISUAL:
+
+VOICE:
+
+EDIT:
+
+
+SCENE 3
+TIME: 15-45 seconds
+
+VISUAL:
+
+VOICE:
+
+EDIT:
+
+
+SCENE 4
+TIME: 45-60 seconds
+
+VISUAL:
+
+VOICE:
+
+EDIT:
+
+
+📌 FINAL RETENTION BOOST
+
+Ending strategy:
+
+Comment trigger:
+
+Replay reason:
 
 """
 
