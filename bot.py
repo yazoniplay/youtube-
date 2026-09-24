@@ -17,16 +17,23 @@ class ViralButtons(discord.ui.View):
         self.video = video
         self.result = result
 
-    @discord.ui.button(label="🔄 Regenerate Idea", style=discord.ButtonStyle.primary)
+    @discord.ui.button(label="🔄 Regenerate", style=discord.ButtonStyle.primary)
     async def regenerate(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message("🔄 Regenerating...")
+        await interaction.response.defer()
         result = generate_script(self.video, regenerate=True)
-        await interaction.followup.send(result[:4000])
+        embed = discord.Embed(title="🔄 New Version Generated", description=result[:4000], color=discord.Color.blue())
+        await interaction.followup.send(embed=embed, view=ViralButtons(self.video, result))
 
     @discord.ui.button(label="💾 Save", style=discord.ButtonStyle.success)
     async def save(self, interaction: discord.Interaction, button: discord.ui.Button):
         save_video(self.video, self.result)
-        await interaction.response.send_message("✅ Saved.", ephemeral=True)
+        await interaction.response.send_message("✅ Saved to your viral library.", ephemeral=True)
+
+    @discord.ui.button(label="🎬 Another Version", style=discord.ButtonStyle.secondary)
+    async def another(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer()
+        result = generate_script(self.video, regenerate=True)
+        await interaction.followup.send(result[:4000])
 
 
 @bot.event
@@ -61,11 +68,16 @@ async def saved(interaction: discord.Interaction):
         await interaction.response.send_message("No saved videos yet.")
         return
 
-    text = "📚 Saved Viral Ideas\n\n"
-    for video in videos[:10]:
-        text += f"#{video['id']} 🔥 {video['title']}\n{video['url']}\n\n"
+    embed = discord.Embed(title="📚 Saved Viral Ideas", color=discord.Color.green())
 
-    await interaction.response.send_message(text[:4000])
+    for video in videos[:10]:
+        embed.add_field(
+            name=f"#{video['id']} 🔥 {video['title']}",
+            value=video['url'],
+            inline=False
+        )
+
+    await interaction.response.send_message(embed=embed)
 
 
 @bot.tree.command(name="view", description="View a saved viral idea")
@@ -76,7 +88,8 @@ async def view(interaction: discord.Interaction, id: int):
         await interaction.response.send_message("❌ Not found.")
         return
 
-    await interaction.response.send_message(video['script'][:4000])
+    embed = discord.Embed(title=f"📖 {video['title']}", description=video['script'][:4000], color=discord.Color.blue())
+    await interaction.response.send_message(embed=embed)
 
 
 @bot.tree.command(name="delete", description="Delete a saved viral idea")
